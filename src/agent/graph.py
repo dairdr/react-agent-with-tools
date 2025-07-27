@@ -39,6 +39,12 @@ def agent_node(state: AgentState, config: RunnableConfig):
     if not messages or not isinstance(messages[0], SystemMessage):
         messages = [SYSTEM_MESSAGE] + messages
 
+    # Handle empty conversation case - Gemini requires at least one user message
+    if len(messages) == 1 and isinstance(messages[0], SystemMessage):
+        # Add a minimal user message to satisfy Gemini's requirements
+        from langchain_core.messages import HumanMessage
+        messages.append(HumanMessage(content="Hello"))
+
     # Filter messages to ensure no empty content (prevents Gemini errors)
     processed_messages = filter_empty_content_messages(messages)
 
