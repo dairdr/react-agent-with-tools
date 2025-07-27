@@ -1,7 +1,8 @@
 """Integration tests for the agent graph."""
 
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import patch, Mock
 from langchain_core.messages import HumanMessage
 
 from agent import graph

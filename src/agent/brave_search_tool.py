@@ -1,9 +1,9 @@
 """Brave Search tool for web searching."""
 
-from typing import Optional
-from langchain_core.tools import BaseTool
-from langchain_core.callbacks import CallbackManagerForToolRun
+
 from langchain_community.tools import BraveSearch
+from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.tools import BaseTool
 
 
 class BraveSearchTool(BaseTool):
@@ -11,9 +11,9 @@ class BraveSearchTool(BaseTool):
 
     name: str = "brave_search"
     description: str = "Search the web using Brave Search. Provide a search query as input."
-    api_key: Optional[str] = None
+    api_key: str | None = None
 
-    def __init__(self, api_key: Optional[str] = None, **kwargs):
+    def __init__(self, api_key: str | None = None, **kwargs):
         """Initialize the BraveSearchTool with an API key."""
         super().__init__(api_key=api_key, **kwargs)
         self._brave_search_tool = None
@@ -24,7 +24,7 @@ class BraveSearchTool(BaseTool):
     def _run(
         self,
         query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None
+        run_manager: CallbackManagerForToolRun | None = None
     ) -> str:
         """Execute the search with the given query about any topic you can find in internet."""
         if self._brave_search_tool:

@@ -1,9 +1,9 @@
 """ArXiv search tool for academic paper searching."""
 
+
 import arxiv
-from typing import Optional
-from langchain_core.tools import BaseTool
 from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.tools import BaseTool
 
 
 class ArxivSearchTool(BaseTool):
@@ -21,9 +21,9 @@ class ArxivSearchTool(BaseTool):
     def _run(
         self,
         query: str,
-        max_results: Optional[int] = None,
-        start: Optional[int] = None,
-        run_manager: Optional[CallbackManagerForToolRun] = None
+        max_results: int | None = None,
+        start: int | None = None,
+        run_manager: CallbackManagerForToolRun | None = None
     ) -> str:
         """Execute the search with the given query to find academic papers on arXiv.
 

@@ -1,11 +1,12 @@
 """Unit tests for agent configuration and graph setup."""
 
-import sys
 import os
-from unittest.mock import patch, Mock
-from langgraph.pregel import Pregel
-from langchain_core.tools import BaseTool
+import sys
+from unittest.mock import Mock, patch
+
 from langchain_core.messages import SystemMessage
+from langchain_core.tools import BaseTool
+from langgraph.pregel import Pregel
 
 # Add the src directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../src'))
@@ -13,7 +14,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../src'))
 # Mock the Google credentials to avoid authentication issues during import
 with patch('agent.graph.ChatGoogleGenerativeAI') as mock_llm:
     mock_llm.return_value = Mock()
-    from agent.graph import graph, llm_with_tools, SYSTEM_MESSAGE
+    from agent.graph import SYSTEM_MESSAGE, graph, llm_with_tools
     from agent.tools import tools
 
 

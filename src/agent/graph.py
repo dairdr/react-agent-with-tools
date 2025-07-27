@@ -1,20 +1,21 @@
 """This module defines the state graph for the agent, including the main agent node and tool handling."""
 
-from langgraph.graph import StateGraph, MessagesState, START, END
-from langchain_core.messages import SystemMessage, ToolMessage, AnyMessage
+from langchain_core.messages import AnyMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langgraph.graph import END, START, MessagesState, StateGraph
 
 from agent.tools import tools
 from agent.utils import (
+    filter_empty_content_messages,
     has_too_many_consecutive_tool_calls,
     message_has_tool_calls,
     process_tool_calls,
-    filter_empty_content_messages
 )
 
 
 class Configuration:
+    """Basic configuration for agent."""
     pass
 
 
@@ -28,11 +29,12 @@ llm_with_tools = llm.bind_tools(tools)
 
 
 class AgentState(MessagesState):
+    """Global agent state that includes messages."""
     pass
 
 
 def agent_node(state: AgentState, config: RunnableConfig):
-    """Main agent node that processes the input."""
+    """Process user messages and generate a response."""
     messages = state["messages"]
 
     # Add system message if it's not already the first message
@@ -79,7 +81,6 @@ def tools_node(state: AgentState, config: RunnableConfig):
         return {"messages": messages_to_add}
 
     # log a warning for observation
-    print("Warning: No tool calls found in the last message. This may indicate an issue.")
 
     # No tool calls found - this shouldn't happen with modern LLMs
     return {"messages": [ToolMessage(content="No tool calls found", tool_call_id="error")]}

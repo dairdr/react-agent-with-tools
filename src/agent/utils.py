@@ -1,8 +1,9 @@
 """Utility functions for the agent graph."""
 
 from copy import copy
-from typing import List, Dict, Any, Sequence
-from langchain_core.messages import BaseMessage, ToolMessage, AnyMessage, SystemMessage
+from typing import Any, Dict, List, Sequence
+
+from langchain_core.messages import AnyMessage, SystemMessage, ToolMessage
 
 
 def has_too_many_consecutive_tool_calls(
