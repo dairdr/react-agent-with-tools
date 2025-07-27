@@ -39,7 +39,7 @@ def is_tool_response(message: AnyMessage) -> bool:
     return isinstance(message, ToolMessage)
 
 
-def execute_tool(tool, tool_name: str, tool_input: Dict[str, Any]) -> str:
+def execute_tool(tool: Any, tool_name: str, tool_input: Dict[str, Any]) -> str:
     """Execute a single tool and return the result content."""
     try:
         result = tool.run(tool_input)
@@ -54,12 +54,12 @@ def execute_tool(tool, tool_name: str, tool_input: Dict[str, Any]) -> str:
         return f"Error executing tool {tool_name}: {str(e)}"
 
 
-def find_tool_by_name(tools: List, tool_name: str):
+def find_tool_by_name(tools: List[Any], tool_name: str) -> Any:
     """Find a tool by its name from the tools list."""
     return next((t for t in tools if t.name == tool_name), None)
 
 
-def process_tool_calls(tool_calls: List[Dict], tools: List) -> List[ToolMessage]:
+def process_tool_calls(tool_calls: List[Dict[str, Any]], tools: List[Any]) -> List[ToolMessage]:
     """Process tool calls and return ToolMessage list."""
     messages_to_add = []
 
@@ -82,7 +82,7 @@ def process_tool_calls(tool_calls: List[Dict], tools: List) -> List[ToolMessage]
 
 def filter_empty_content_messages(messages: List[AnyMessage]) -> List[AnyMessage]:
     """Filter messages to ensure no message has empty content (prevents Gemini errors)."""
-    processed_messages = []
+    processed_messages: List[AnyMessage] = []
     for message in messages:
         content = getattr(message, "content", "")
 

@@ -1,6 +1,8 @@
 """This module defines the state graph for the agent, including the main agent node and tool handling."""
 
-from langchain_core.messages import AnyMessage, SystemMessage, ToolMessage
+from typing import Sequence
+
+from langchain_core.messages import AnyMessage, BaseMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import END, START, MessagesState, StateGraph
@@ -33,7 +35,7 @@ class AgentState(MessagesState):
     pass
 
 
-def agent_node(state: AgentState, config: RunnableConfig):
+def agent_node(state: AgentState, config: RunnableConfig) -> dict[str, Sequence[BaseMessage]]:
     """Process user messages and generate a response."""
     messages = state["messages"]
 
@@ -70,7 +72,7 @@ def should_continue(state: AgentState) -> str:
     return END
 
 
-def tools_node(state: AgentState, config: RunnableConfig):
+def tools_node(state: AgentState, config: RunnableConfig) -> dict[str, Sequence[BaseMessage]]:
     """Handle tool execution using the modern tool calling format."""
     last_message: AnyMessage = state["messages"][-1]
 

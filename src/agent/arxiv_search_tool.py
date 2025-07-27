@@ -1,7 +1,9 @@
 """ArXiv search tool for academic paper searching."""
 
 
-import arxiv
+from typing import Any
+
+import arxiv  # type: ignore
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
 
@@ -14,7 +16,7 @@ class ArxivSearchTool(BaseTool):
     max_results: int = 5
     start: int = 0
 
-    def __init__(self, max_results: int = 5, start: int = 0, **kwargs):
+    def __init__(self, max_results: int = 5, start: int = 0, **kwargs: Any) -> None:
         """Initialize the ArxivSearchTool with maximum number of results to return and start position for pagination."""
         super().__init__(max_results=max_results, start=start, **kwargs)
 
@@ -54,7 +56,7 @@ class ArxivSearchTool(BaseTool):
                 sort_by=arxiv.SortCriterion.Relevance
             )
 
-            results = []
+            results: list[dict[str, Any]] = []
             # Use the built-in offset parameter for pagination and limit results manually
             for paper in client.results(search, offset=start):
                 if len(results) >= max_results:
