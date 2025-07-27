@@ -1,3 +1,5 @@
+"""This module defines the state graph for the agent, including the main agent node and tool handling."""
+
 from langgraph.graph import StateGraph, MessagesState, START, END
 from langchain_core.messages import SystemMessage, ToolMessage, AnyMessage
 from langchain_core.runnables import RunnableConfig

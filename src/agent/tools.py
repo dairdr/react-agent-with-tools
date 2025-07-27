@@ -1,8 +1,8 @@
+"""This module define all tools available for the agent."""
+
 import os
-import urllib.request
-import urllib.parse
-import xml.etree.ElementTree as ET
-from typing import Optional, Dict, Any
+import arxiv
+from typing import Optional
 from langchain_core.tools import BaseTool
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_community.tools import BraveSearch
@@ -37,127 +37,96 @@ class BraveSearchTool(BaseTool):
             )
 
 
-class ArXivSearchTool(BaseTool):
-    """Tool for searching academic papers using ArXiv API."""
+class ArxivSearchTool(BaseTool):
+    """Tool for searching academic papers on arXiv."""
 
     name: str = "arxiv_search"
-    description: str = "Search for academic papers on ArXiv. Provide a search query to find relevant research papers."
+    description: str = "Search for academic papers on arXiv. Provide a search query, max_results (default 5), and start position (default 0) for pagination."
+    max_results: int = 5
+    start: int = 0
+
+    def __init__(self, max_results: int = 5, start: int = 0, **kwargs):
+        """Initialize the ArxivSearchTool with maximum number of results to return and start position for pagination."""
+        super().__init__(max_results=max_results, start=start, **kwargs)
 
     def _run(
         self,
         query: str,
-        max_results: int = 5,
+        max_results: Optional[int] = None,
+        start: Optional[int] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
-        """Execute the search with the given query for academic papers."""
+        """Execute the search with the given query to find academic papers on arXiv.
+
+        Args:
+            query: The search query string
+            max_results: Maximum number of results to return (overrides default)
+            start: Starting position for pagination (overrides default)
+            run_manager: Optional callback manager
+        """
+        # Use provided parameters or fall back to instance defaults
+        max_results = max_results if max_results is not None else self.max_results
+        start = start if start is not None else self.start
+
         try:
-            # Encode the query for URL
-            encoded_query = urllib.parse.quote(query)
+            # Create a search client
+            client = arxiv.Client()
 
-            # Construct the API URL
-            url = f"http://export.arxiv.org/api/query?search_query=all:{encoded_query}&start=0&max_results={max_results}"
+            # For pagination, we need to request enough results to cover our offset + max_results
+            # We'll request a reasonable upper bound to ensure we have enough results
+            total_needed = start + max_results
+            # Request at least 50 results
+            search_max_results = max(total_needed, 50)
 
-            # Make the request
-            with urllib.request.urlopen(url) as response:
-                data = response.read().decode('utf-8')
+            # Perform the search using built-in pagination
+            search = arxiv.Search(
+                query=query,
+                max_results=search_max_results,
+                sort_by=arxiv.SortCriterion.Relevance
+            )
 
-            # Parse the XML response
-            root = ET.fromstring(data)
+            results = []
+            # Use the built-in offset parameter for pagination and limit results manually
+            for paper in client.results(search, offset=start):
+                if len(results) >= max_results:
+                    break
 
-            # Define namespaces
-            namespaces = {
-                'atom': 'http://www.w3.org/2005/Atom',
-                'arxiv': 'http://arxiv.org/schemas/atom'
-            }
+                paper_info = {
+                    "title": paper.title,
+                    "authors": [author.name for author in paper.authors],
+                    "summary": paper.summary,
+                    "published": paper.published.strftime("%Y-%m-%d"),
+                    "url": paper.entry_id,
+                    "categories": paper.categories
+                }
+                results.append(paper_info)
 
-            # Extract paper information
-            papers = []
-            entries = root.findall('atom:entry', namespaces)
-
-            for entry in entries:
-                paper = {}
-
-                # Title
-                title_elem = entry.find('atom:title', namespaces)
-                paper['title'] = title_elem.text.strip(
-                ) if title_elem is not None and title_elem.text else "No title"
-
-                # Authors
-                authors = []
-                for author in entry.findall('atom:author', namespaces):
-                    name_elem = author.find('atom:name', namespaces)
-                    if name_elem is not None and name_elem.text:
-                        authors.append(name_elem.text.strip())
-                paper['authors'] = ', '.join(
-                    authors) if authors else "No authors listed"
-
-                # Abstract/Summary
-                summary_elem = entry.find('atom:summary', namespaces)
-                paper['abstract'] = summary_elem.text.strip(
-                ) if summary_elem is not None and summary_elem.text else "No abstract"
-
-                # Published date
-                published_elem = entry.find('atom:published', namespaces)
-                paper['published'] = published_elem.text.strip(
-                ) if published_elem is not None and published_elem.text else "No date"
-
-                # ArXiv ID (from the link)
-                id_elem = entry.find('atom:id', namespaces)
-                if id_elem is not None and id_elem.text:
-                    paper['arxiv_id'] = id_elem.text.strip().split('/')[-1]
-                else:
-                    paper['arxiv_id'] = "Unknown"
-
-                # PDF link
-                for link in entry.findall('atom:link', namespaces):
-                    if link.get('title') == 'pdf':
-                        paper['pdf_url'] = link.get('href')
-                        break
-                else:
-                    paper['pdf_url'] = None
-
-                papers.append(paper)
-
-            # Format the results
-            if not papers:
+            if not results:
                 return f"No papers found for query: {query}"
 
-            result = f"Found {len(papers)} papers for query: {query}\n\n"
+            # Format the results as a readable string
+            formatted_results = f"Found {len(results)} papers for query: '{query}' (showing results {start + 1}-{start + len(results)})\n\n"
 
-            for i, paper in enumerate(papers, 1):
-                # Clean and format the title
-                title = paper['title'].replace(
-                    '\n', ' ').replace('\r', ' ').strip()
-                title = ' '.join(title.split())  # Remove extra whitespace
+            for i, paper in enumerate(results, 1):
+                # Show first 3 authors
+                authors_str = ", ".join(paper["authors"][:3])
+                if len(paper["authors"]) > 3:
+                    authors_str += " et al."
 
-                # Clean abstract
-                abstract = paper['abstract'].replace(
-                    '\n', ' ').replace('\r', ' ').strip()
-                # Remove extra whitespace
-                abstract = ' '.join(abstract.split())
+                formatted_results += f"{start + i}. **{paper['title']}**\n"
+                formatted_results += f"   Authors: {authors_str}\n"
+                formatted_results += f"   Published: {paper['published']}\n"
+                formatted_results += f"   Categories: {', '.join(paper['categories'])}\n"
+                formatted_results += f"   URL: {paper['url']}\n"
+                formatted_results += f"   Summary: {paper['summary'][:300]}...\n\n"
 
-                result += f"{i}. {title}\n"
-                result += f"   Authors: {paper['authors']}\n"
-                # Just the date part
-                result += f"   Published: {paper['published'][:10]}\n"
-                result += f"   ArXiv ID: {paper['arxiv_id']}\n"
-                if paper['pdf_url']:
-                    result += f"   PDF: {paper['pdf_url']}\n"
-
-                # Truncate abstract and ensure it's not empty
-                abstract_snippet = abstract[:200] if abstract else "No abstract available"
-                if len(abstract) > 200:
-                    abstract_snippet += "..."
-                result += f"   Abstract: {abstract_snippet}\n\n"
-
-            return result.strip()  # Remove any trailing whitespace
+            return formatted_results
 
         except Exception as e:
-            error_msg = f"Error searching ArXiv: {str(e)}"
-            return error_msg if error_msg.strip() else "Error occurred while searching ArXiv"
+            return f"Error searching arXiv: {str(e)}"
 
 
 tools = [
     BraveSearchTool(api_key=os.getenv("BRAVE_SEARCH_API_KEY")),
-    ArXivSearchTool(),
+    ArxivSearchTool(max_results=5),
 ]
