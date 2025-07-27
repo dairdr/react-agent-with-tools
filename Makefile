@@ -7,10 +7,10 @@ all: help
 TEST_FILE ?= tests/unit_tests/
 
 test:
-	uv run python -m pytest $(TEST_FILE)
+	uv run python -m pytest $(TEST_FILE) -v
 
 integration_tests:
-	uv run python -m pytest tests/integration_tests 
+	uv run python -m pytest tests/integration_tests -v
 
 test_watch:
 	uv run python -m ptw --snapshot-update --now . -- -vv tests/unit_tests
