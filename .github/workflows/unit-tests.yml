@@ -22,6 +22,14 @@ jobs:
         os: [ubuntu-latest]
         python-version: ["3.11", "3.12"]
     runs-on: ${{ matrix.os }}
+    env:
+      BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+      LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+      LANGSMITH_TRACING: ${{ vars.LANGSMITH_TRACING }}
+      LANGSMITH_PROJECT: ${{ vars.LANGSMITH_PROJECT }}
+      LANGSMITH_ENDPOINT: ${{ vars.LANGSMITH_ENDPOINT }}
+      USER_AGENT: ${{ vars.USER_AGENT }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
