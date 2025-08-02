@@ -145,6 +145,6 @@ def get_agent_config(config: RunnableConfig) -> Configuration:
 
     try:
         return Configuration(**filtered_config)
-    except (TypeError, ValueError, KeyError) as e:
+    except (TypeError, ValueError, KeyError):
         # Log the error in production for debugging
         return Configuration()
