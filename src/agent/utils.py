@@ -4,6 +4,10 @@ from copy import copy
 from typing import Any, Dict, List, Sequence
 
 from langchain_core.messages import AnyMessage, SystemMessage, ToolMessage
+from langchain_core.runnables import RunnableConfig
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+from agent.config import Configuration
 
 
 def has_too_many_consecutive_tool_calls(
@@ -103,3 +107,44 @@ def filter_empty_content_messages(messages: List[AnyMessage]) -> List[AnyMessage
             processed_messages.append(message)
 
     return processed_messages
+
+
+def get_system_message(config: Configuration) -> SystemMessage:
+    """Get the system message based on configuration."""
+    return SystemMessage(content=config.system_message)
+
+
+def get_llm(config: Configuration) -> ChatGoogleGenerativeAI:
+    """Get the LLM based on configuration."""
+    return ChatGoogleGenerativeAI(
+        model=config.model_name,
+        temperature=config.temperature
+    )
+
+
+def get_agent_config(config: RunnableConfig) -> Configuration:
+    """Extract and validate agent configuration from RunnableConfig.
+
+    Returns a Configuration instance with proper typing for autocomplete.
+    Falls back to default configuration if extraction fails.
+
+    Args:
+        config: The RunnableConfig from LangGraph containing runtime configuration
+
+    Returns:
+        Configuration: A validated Configuration instance
+    """
+    configurable = config.get("configurable", {})
+
+    # Filter out non-Configuration fields to avoid Pydantic validation errors
+    config_fields = Configuration.model_fields.keys()
+    filtered_config = {
+        key: value for key, value in configurable.items()
+        if key in config_fields
+    }
+
+    try:
+        return Configuration(**filtered_config)
+    except (TypeError, ValueError, KeyError) as e:
+        # Log the error in production for debugging
+        return Configuration()
