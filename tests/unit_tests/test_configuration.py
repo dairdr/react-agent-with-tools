@@ -17,7 +17,7 @@ with patch('langchain_google_genai.ChatGoogleGenerativeAI') as mock_llm:
     from agent.config import Configuration
     from agent.graph import graph
     from agent.tools import tools
-    from agent.utils import get_system_message, get_llm, get_agent_config
+    from agent.utils import get_agent_config, get_llm, get_system_message
 
 
 def test_graph_is_pregel_instance() -> None:
